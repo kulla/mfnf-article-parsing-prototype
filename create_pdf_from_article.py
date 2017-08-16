@@ -1,5 +1,6 @@
 """Creates a PDF from an article of the project „Mathe für Nicht-Freaks“."""
 
+import json
 import requests
 
 from api import HTTPMediaWikiAPI
@@ -20,7 +21,7 @@ def run_script():
     # Parse article's content
     article_ast = parse_mediawiki_code(api, article_text)
 
-    print(article_ast)
+    print(json.dumps(article_ast, indent=2))
 
 if __name__ == "__main__":
     run_script()
