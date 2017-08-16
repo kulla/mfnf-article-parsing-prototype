@@ -39,7 +39,7 @@ class HTTPMediaWikiAPI(MediaWikiAPI):
     @property
     def _rest_api_url(self):
         """Returns the URL to the server's REST API endpoints."""
-        return "https://en.wikipedia.org/api/rest_v1"
+        return "https://www.mediawiki.org/api/rest_v1/"
 
     def _index_call(self, params):
         """Make an HTTP request to the server's `index.php` file."""
@@ -57,6 +57,6 @@ class HTTPMediaWikiAPI(MediaWikiAPI):
     def convert_text_to_html(self, text):
         """Returns the markdown string `text` converted to HTML."""
         endpoint = ["transform", "wikitext", "to", "html"]
-        data = {"wikitext": text, "original": {}}
+        data = {"wikitext": text}
 
         return self._api_call(endpoint, data).text
