@@ -3,12 +3,10 @@
 Copyright 2017 Stephan Kulla
 """
 
-import requests
-
 class MediaWikiAPI(object):
     """Implements an API for content stored on a MediaWiki."""
 
-    def __init__(self, domain="de.wikibooks.org", req=requests.Session()):
+    def __init__(self, req, domain="de.wikibooks.org"):
         """Initializes the object.
 
         Arguments:
