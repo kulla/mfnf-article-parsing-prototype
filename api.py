@@ -3,7 +3,22 @@
 Copyright 2017 Stephan Kulla
 """
 
-class MediaWikiAPI(object):
+from abc import ABCMeta, abstractmethod
+
+class MediaWikiAPI(metaclass=ABCMeta):
+    """Interface for accessing content of a MediaWiki project."""
+
+    @abstractmethod
+    def get_content(self, title):
+        """Returns the content of the article with title `title`."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def convert_text_to_html(self, text):
+        """Converts MediaWiki code `text` into HTML representing it."""
+        raise NotImplementedError
+
+class HTTPMediaWikiAPI(MediaWikiAPI):
     """Implements an API for content stored on a MediaWiki."""
 
     def __init__(self, req, domain="de.wikibooks.org"):
