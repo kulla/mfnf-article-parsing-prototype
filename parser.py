@@ -9,7 +9,7 @@ class HTML2JSONParser(HTMLParser):
         super(HTML2JSONParser, self).__init__()
 
         self.__node_stack = []
-        self.root = None
+        self.content = []
 
     def handle_starttag(self, tag, attrs):
         node = {"type": "element", "name": tag,
@@ -18,9 +18,7 @@ class HTML2JSONParser(HTMLParser):
         if self.__node_stack:
             self.__node_stack[-1]["children"].append(node)
         else:
-            assert not self.root, "HTML must contain only one root element"
-
-            self.root = node
+            self.content.append(node)
 
         self.__node_stack.append(node)
 
@@ -43,13 +41,13 @@ class HTML2JSONParser(HTMLParser):
     def error(self, message):
         raise AssertionError(message)
 
-def html2json(text):
-    """Converts HTML to JSON."""
+def mediawikihtml2json(text):
+    """Converts HTML of a MediaWiki document to JSON."""
     parser = HTML2JSONParser()
 
     parser.feed(text)
 
-    return parser.root
+    return {"type": "document", "content": parser.content}
 
 def parse_mediawiki_code(api, text):
     """Returns an AST of the MediaWiki code `text`.
@@ -57,8 +55,8 @@ def parse_mediawiki_code(api, text):
     Arguments:
         api  -- instance of MediaWikiAPI
         text -- MediaWiki code"""
-    html = api.convert_text_to_html(text)
+    result = api.convert_text_to_html(text)
 
-    html_json = html2json(html)
+    result = mediawikihtml2json(result)
 
-    return html_json
+    return result

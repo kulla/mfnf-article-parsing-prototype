@@ -55,6 +55,6 @@ class HTTPMediaWikiAPI(MediaWikiAPI):
 
     def convert_text_to_html(self, text):
         endpoint = ["transform", "wikitext", "to", "html"]
-        data = {"wikitext": text, "stash": False}
+        data = {"wikitext": text, "stash": False, "body_only": True}
 
         return self._api_call(endpoint, data).text
