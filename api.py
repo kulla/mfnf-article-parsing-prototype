@@ -51,11 +51,9 @@ class HTTPMediaWikiAPI(MediaWikiAPI):
         return self.req.post(endpoint_url, data=data)
 
     def get_content(self, title):
-        """Returns the content of an article with title `title`."""
         return self._index_call({"action": "raw", "title": title})
 
     def convert_text_to_html(self, text):
-        """Returns the markdown string `text` converted to HTML."""
         endpoint = ["transform", "wikitext", "to", "html"]
         data = {"wikitext": text, "stash": False}
 
