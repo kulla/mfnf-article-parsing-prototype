@@ -47,16 +47,12 @@ def mediawikihtml2json(text):
 
     parser.feed(text)
 
-    return {"type": "document", "content": parser.content}
+    return parser.content
 
-def parse_mediawiki_code(api, text):
-    """Returns an AST of the MediaWiki code `text`.
+def parse_article(api, article):
+    """Parses the article `article`."""
+    article["content"] = api.convert_text_to_html(article["title"],
+                                                  article["content"])
+    article["content"] = mediawikihtml2json(article["content"])
 
-    Arguments:
-        api  -- instance of MediaWikiAPI
-        text -- MediaWiki code"""
-    result = api.convert_text_to_html(text)
-
-    result = mediawikihtml2json(result)
-
-    return result
+    return article

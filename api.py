@@ -4,6 +4,7 @@ Copyright 2017 Stephan Kulla
 """
 
 from abc import ABCMeta, abstractmethod
+from urllib.parse import quote
 
 class MediaWikiAPI(metaclass=ABCMeta):
     """Interface for accessing content of a MediaWiki project."""
@@ -14,7 +15,7 @@ class MediaWikiAPI(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def convert_text_to_html(self, text):
+    def convert_text_to_html(self, title, text):
         """Converts MediaWiki code `text` into HTML representing it."""
         raise NotImplementedError
 
@@ -39,7 +40,7 @@ class HTTPMediaWikiAPI(MediaWikiAPI):
     @property
     def _rest_api_url(self):
         """Returns the URL to the server's REST API endpoints."""
-        return "https://www.mediawiki.org/api/rest_v1"
+        return "https://de.wikibooks.org/api/rest_v1"
 
     def _index_call(self, params):
         """Make an HTTP request to the server's `index.php` file."""
@@ -53,8 +54,8 @@ class HTTPMediaWikiAPI(MediaWikiAPI):
     def get_content(self, title):
         return self._index_call({"action": "raw", "title": title})
 
-    def convert_text_to_html(self, text):
-        endpoint = ["transform", "wikitext", "to", "html"]
-        data = {"wikitext": text, "stash": False, "body_only": True}
+    def convert_text_to_html(self, title, text):
+        endpoint = ["transform", "wikitext", "to", "html", quote(title)]
+        data = {"title": title, "wikitext": text, "body_only": True}
 
         return self._api_call(endpoint, data).text
