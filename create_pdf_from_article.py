@@ -4,7 +4,9 @@ import requests
 
 from api import HTTPMediaWikiAPI
 from cachecontrol import CacheControl
+from parser import parse_mediawiki_code
 
+# title of article which shall be converted to PDF
 ARTICLE = "Mathe für Nicht-Freaks: Was ist Analysis?"
 
 def run_script():
@@ -12,7 +14,13 @@ def run_script():
     req = CacheControl(requests.Session())
     api = HTTPMediaWikiAPI(req)
 
-    print(api.get_content(ARTICLE))
+    # Get content of article
+    article_text = api.get_content(ARTICLE)
+
+    # Parse article's content
+    article_ast = parse_mediawiki_code(api, article_text)
+
+    print(article_ast)
 
 if __name__ == "__main__":
     run_script()
