@@ -3,7 +3,7 @@
 import json
 
 from html.parser import HTMLParser
-from transformations import JSONTransformation
+from transformations import JSONTransformation, ChainedTransformation
 from utils import lookup
 
 class HTML2JSONParser(HTMLParser):
@@ -45,36 +45,42 @@ class HTML2JSONParser(HTMLParser):
     def error(self, message):
         raise AssertionError(message)
 
-def mediawikihtml2json(text):
-    """Converts HTML of a MediaWiki document to JSON."""
-    parser = HTML2JSONParser()
+class MediaWikiParser(ChainedTransformation):
 
-    parser.feed(text)
+    class MediaWiki2JSON:
+        """Converts HTML of a MediaWiki document to JSON."""
 
-    return parser.content
+        def __call__(self, text):
+            parser = HTML2JSONParser()
 
-class TemplateDeinclusion(JSONTransformation):
-    """Replaces included MediaWiki templates with template specification."""
+            parser.feed(text)
 
-    def transform_dict(self, obj):
-        if lookup(obj, "type") == "element" \
-                and lookup(obj, "attrs", "typeof") == "mw:Transclusion":
-            template = json.loads(obj["attrs"]["data-mw"])
-            template = template["parts"][0]["template"]
+            return parser.content
 
-            name = template["target"]["wt"].strip()
+    class TemplateDeinclusion(JSONTransformation):
+        """Replaces included MediaWiki templates with template specification."""
 
-            params = template["params"]
-            params = {key: value["wt"] for key, value in params.items()}
+        def transform_dict(self, obj):
+            if lookup(obj, "type") == "element" \
+                    and lookup(obj, "attrs", "typeof") == "mw:Transclusion":
+                template = json.loads(obj["attrs"]["data-mw"])
+                template = template["parts"][0]["template"]
 
-            return {"type": "template", "name": name, "params": params}
-        else:
-            return super(TemplateDeinclusion, self).transform_dict(obj)
+                name = template["target"]["wt"].strip()
+
+                params = template["params"]
+                params = {key: value["wt"] for key, value in params.items()}
+
+                return {"type": "template", "name": name, "params": params}
+            else:
+                return super().transform_dict(obj)
 
 def parse_article(api, article):
     """Parses the article `article`."""
     article["content"] = api.convert_text_to_html(article["title"],
                                                   article["content"])
-    article["content"] = mediawikihtml2json(article["content"])
 
-    return TemplateDeinclusion()(article)
+
+    article["content"] = MediaWikiParser()(article["content"])
+
+    return article
