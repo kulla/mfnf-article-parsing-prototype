@@ -115,6 +115,15 @@ class ArticleParser(ChainedAction):
 
             return add_dict(article, {"content": content})
 
+    class ConvertInlineMath(NodeTransformation):
+        def is_target_dict(self, obj):
+            return lookup(obj, "attrs", "typeof") == "mw:Extension/math"
+
+        def transform_dict(self, obj):
+            formula = json.loads(obj["attrs"]["data-mw"])["body"]["extsrc"]
+
+            return {"type": "inlinemath", "formula": formula}
+
     class DeleteHeaderAndFooter(DeleteTransformation):
 
         def shall_delete_dict(self, obj):
