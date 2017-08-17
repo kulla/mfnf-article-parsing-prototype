@@ -3,7 +3,7 @@
 import json
 
 from html.parser import HTMLParser
-from transformations import JSONTransformation, ChainedAction, Action
+from transformations import NodeTransformation, ChainedAction, Action
 from utils import lookup, remove_prefix
 
 TEMPLATE_SPEC = {
@@ -68,9 +68,13 @@ class MediaWikiCodeParser(ChainedAction):
 
             return parser.content
 
-    class TemplateDeinclusion(JSONTransformation):
+    class TemplateDeinclusion(NodeTransformation):
         """Replaces included MediaWiki templates with template
         specification."""
+
+        def is_target_dict(self, obj):
+            return lookup(obj, "type") == "element" \
+                    and lookup(obj, "attrs", "typeof") == "mw:Transclusion"
 
         def parse_parameter_value(self, name, param_key, param_value):
             """Parses `param_value` in case `param_key` is a content
@@ -83,22 +87,18 @@ class MediaWikiCodeParser(ChainedAction):
                 return param_value
 
         def transform_dict(self, obj):
-            if lookup(obj, "type") == "element" \
-                    and lookup(obj, "attrs", "typeof") == "mw:Transclusion":
-                template = json.loads(obj["attrs"]["data-mw"])
-                template = template["parts"][0]["template"]
+            template = json.loads(obj["attrs"]["data-mw"])
+            template = template["parts"][0]["template"]
 
-                name = template["target"]["wt"].strip()
-                name = remove_prefix(name, ":Mathe für Nicht-Freaks: Vorlage:")
+            name = template["target"]["wt"].strip()
+            name = remove_prefix(name, ":Mathe für Nicht-Freaks: Vorlage:")
 
-                params = template["params"]
-                params = {k: v["wt"] for k, v in params.items()}
-                params = {key: self.parse_parameter_value(name, key, value) \
-                            for key, value in params.items()}
+            params = template["params"]
+            params = {k: v["wt"] for k, v in params.items()}
+            params = {key: self.parse_parameter_value(name, key, value) \
+                        for key, value in params.items()}
 
-                return {"type": "template", "name": name, "params": params}
-            else:
-                return super().transform_dict(obj)
+            return {"type": "template", "name": name, "params": params}
 
 def parse_article(api, article):
     """Parses the article `article`."""

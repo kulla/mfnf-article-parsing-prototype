@@ -52,16 +52,16 @@ class ChainedAction(Action, metaclass=ChainedActionMetaclass):
 
         return result
 
-class JSONTransformation(Action):
+class Transformation(Action):
     """Base class of a transformation of a JSON object. This class implements
     the identity transformation. It returns a new copy of the given JSON
     object."""
 
-    def transform_dict(self, obj):
+    def act_on_dict(self, obj):
         """Transforms the dictionary `obj`."""
         return {name: self(value) for name, value in obj.items()}
 
-    def transform_list(self, lst):
+    def act_on_list(self, lst):
         """Transforms the list `lst`."""
         return [self(element) for element in lst]
 
@@ -70,8 +70,29 @@ class JSONTransformation(Action):
         if isinstance(obj, str):
             return obj
         elif isinstance(obj, Sequence):
-            return self.transform_list(obj)
+            return self.act_on_list(obj)
         elif isinstance(obj, Mapping):
-            return self.transform_dict(obj)
+            return self.act_on_dict(obj)
         else:
             raise NotImplementedError
+
+class NodeTransformation(Transformation):
+    """Transformations which acts on certain dictionaries."""
+
+    @abstractmethod
+    def is_target_dict(self, obj):
+        """Returns `True` in case this transformation shall apply on this
+        node."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def transform_dict(self, obj):
+        """Computes new dictionary which shall be used in tree instead of the
+        node `obj`."""
+        raise NotImplementedError
+
+    def act_on_dict(self, obj):
+        if self.is_target_dict(obj):
+            return self.transform_dict(obj)
+        else:
+            super().act_on_dict(obj)
