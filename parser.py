@@ -3,8 +3,12 @@
 import json
 
 from html.parser import HTMLParser
-from transformations import JSONTransformation, ChainedTransformation
-from utils import lookup
+from transformations import JSONTransformation, ChainedAction, Action
+from utils import lookup, remove_prefix
+
+TEMPLATE_SPEC = {
+    "Definition": lambda x: x in ["definition"],
+}
 
 class HTML2JSONParser(HTMLParser):
     """Parser for converting HTML to JSON."""
@@ -45,9 +49,16 @@ class HTML2JSONParser(HTMLParser):
     def error(self, message):
         raise AssertionError(message)
 
-class MediaWikiParser(ChainedTransformation):
+class MediaWikiCodeParser(ChainedAction):
+    """Parses MediaWikiCode and restore template definitions."""
 
-    class MediaWiki2JSON:
+    class MediaWikiCode2HTML(Action):
+        """Converts MediaWiki code to HTML"""
+
+        def __call__(self, text):
+            return self.api.convert_text_to_html(self.title, text)
+
+    class MediaWikiCodeHTML2JSON(Action):
         """Converts HTML of a MediaWiki document to JSON."""
 
         def __call__(self, text):
@@ -58,7 +69,18 @@ class MediaWikiParser(ChainedTransformation):
             return parser.content
 
     class TemplateDeinclusion(JSONTransformation):
-        """Replaces included MediaWiki templates with template specification."""
+        """Replaces included MediaWiki templates with template
+        specification."""
+
+        def parse_parameter_value(self, name, param_key, param_value):
+            """Parses `param_value` in case `param_key` is a content
+            parameter."""
+            if name in TEMPLATE_SPEC and TEMPLATE_SPEC[name](param_key):
+                parser = MediaWikiCodeParser(api=self.api, title=self.title)
+
+                return parser(param_value)
+            else:
+                return param_value
 
         def transform_dict(self, obj):
             if lookup(obj, "type") == "element" \
@@ -67,9 +89,12 @@ class MediaWikiParser(ChainedTransformation):
                 template = template["parts"][0]["template"]
 
                 name = template["target"]["wt"].strip()
+                name = remove_prefix(name, ":Mathe für Nicht-Freaks: Vorlage:")
 
                 params = template["params"]
-                params = {key: value["wt"] for key, value in params.items()}
+                params = {k: v["wt"] for k, v in params.items()}
+                params = {key: self.parse_parameter_value(name, key, value) \
+                            for key, value in params.items()}
 
                 return {"type": "template", "name": name, "params": params}
             else:
@@ -77,10 +102,7 @@ class MediaWikiParser(ChainedTransformation):
 
 def parse_article(api, article):
     """Parses the article `article`."""
-    article["content"] = api.convert_text_to_html(article["title"],
-                                                  article["content"])
-
-
-    article["content"] = MediaWikiParser()(article["content"])
+    article["content"] = api.get_content(article["title"])
+    article["content"] = MediaWikiCodeParser(api=api,title=article["title"])(article["content"])
 
     return article

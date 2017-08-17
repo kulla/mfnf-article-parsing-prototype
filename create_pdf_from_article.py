@@ -15,8 +15,7 @@ def run_script():
     req = CacheControl(requests.Session())
     api = HTTPMediaWikiAPI(req)
 
-    article = {"type": "article", "title": ARTICLE,
-               "content": api.get_content(ARTICLE)}
+    article = {"type": "article", "title": ARTICLE}
 
     article = parse_article(api, article)
 

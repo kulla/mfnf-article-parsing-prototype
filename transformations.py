@@ -1,11 +1,24 @@
 """Module with utilities for transformations of JSON trees."""
 
 import inspect
-import collections.abc
 
+from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
+from collections.abc import Sequence, Mapping
 
-class ChainedTransformationMetaclass(type):
+class Action(metaclass=ABCMeta):
+    """Base class for an action."""
+
+    def __init__(self, **options):
+        for key, value in options.items():
+            setattr(self, key, value)
+
+    @abstractmethod
+    def __call__(self, arg):
+        """Defines a transformation on the argument `arg`."""
+        raise NotImplementedError
+
+class ChainedActionMetaclass(ABCMeta):
     """Metaclass for class `ChainedTransformations` which add the member
     `actions` with the list of all transformations defined inside the class
     definition."""
@@ -15,15 +28,21 @@ class ChainedTransformationMetaclass(type):
         return OrderedDict(super().__prepare__(mcs, name, bases))
 
     def __new__(mcs, name, bases, props):
-        props["actions"] = [x() for x in props.values() if inspect.isclass(x)]
+        props["action_classes"] = [x for x in props.values() \
+                                     if inspect.isclass(x)]
 
         return type.__new__(mcs, name, bases, dict(props))
 
-class ChainedTransformation(metaclass=ChainedTransformationMetaclass):
+class ChainedAction(Action, metaclass=ChainedActionMetaclass):
     """A transformation which combines all transformations which are defined
     inside this class."""
 
-    actions = []
+    action_classes = []
+
+    def __init__(self, **options):
+        super().__init__(**options)
+
+        self.actions = [x(**options) for x in self.action_classes]
 
     def __call__(self, arg):
         result = arg
@@ -33,7 +52,7 @@ class ChainedTransformation(metaclass=ChainedTransformationMetaclass):
 
         return result
 
-class JSONTransformation():
+class JSONTransformation(Action):
     """Base class of a transformation of a JSON object. This class implements
     the identity transformation. It returns a new copy of the given JSON
     object."""
@@ -50,9 +69,9 @@ class JSONTransformation():
         """Transforms the JSON object `obj`."""
         if isinstance(obj, str):
             return obj
-        elif isinstance(obj, collections.abc.Sequence):
+        elif isinstance(obj, Sequence):
             return self.transform_list(obj)
-        elif isinstance(obj, collections.abc.Mapping):
+        elif isinstance(obj, Mapping):
             return self.transform_dict(obj)
         else:
             raise NotImplementedError
