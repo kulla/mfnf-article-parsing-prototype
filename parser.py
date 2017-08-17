@@ -3,7 +3,8 @@
 import json
 
 from html.parser import HTMLParser
-from transformations import NodeTransformation, ChainedAction, Action
+from transformations import NodeTransformation, ChainedAction, Action, \
+                            NodeTypeTransformation
 from utils import lookup, remove_prefix, add_dict
 
 TEMPLATE_SPEC = {
@@ -102,13 +103,10 @@ class MediaWikiCodeParser(ChainedAction):
 
 class ArticleParser(ChainedAction):
 
-    class LoadArticleContent(NodeTransformation):
+    class LoadArticleContent(NodeTypeTransformation):
         """Loads the content of an article."""
 
-        def is_target_dict(self, obj):
-            return lookup(obj, "type") == "article"
-
-        def transform_dict(self, article):
+        def transform_article(self, article):
             parser = MediaWikiCodeParser(api=self.api, title=article["title"])
 
             content = parser(self.api.get_content(article["title"]))
