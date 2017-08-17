@@ -4,7 +4,7 @@ import json
 
 from html.parser import HTMLParser
 from transformations import NodeTransformation, ChainedAction, Action, \
-                            NodeTypeTransformation
+                            NodeTypeTransformation, DeleteTransformation
 from utils import lookup, remove_prefix, add_dict
 
 TEMPLATE_SPEC = {
@@ -112,3 +112,9 @@ class ArticleParser(ChainedAction):
             content = parser(self.api.get_content(article["title"]))
 
             return add_dict(article, {"content": content})
+
+    class DeleteHeaderAndFooter(DeleteTransformation):
+
+        def shall_delete_dict(self, obj):
+            return lookup(obj, "type") == "template" \
+                    and obj["name"].startswith("#invoke:")

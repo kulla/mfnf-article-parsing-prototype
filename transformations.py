@@ -116,3 +116,29 @@ class NodeTypeTransformation(NodeTransformation):
         """Default transformation for the case no suitable transformation was
         found."""
         return super().act_on_dict(obj)
+
+class DeleteTransformation(Transformation):
+
+    def shall_delete(self, obj):
+        if isinstance(obj, Mapping):
+            return self.shall_delete_dict(obj)
+        elif isinstance(obj, Sequence):
+            return self.shall_delete_list(obj)
+        else:
+            return False
+
+    def shall_delete_dict(self, obj):
+        return False
+
+    def shall_delete_list(self, lst):
+        return False
+
+    def shall_delete_property(self, key):
+        return False
+
+    def act_on_dict(self, obj):
+        return {k: self(v) for k, v in obj.items() if not self.shall_delete(v)\
+                    and not self.shall_delete_property(k)}
+
+    def act_on_list(self, lst):
+        return [self(x) for x in lst if not self.shall_delete(x)]
