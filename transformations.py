@@ -5,6 +5,17 @@ import inspect
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections.abc import Sequence, Mapping
+from utils import lookup
+
+class NotInterested(Exception):
+    pass
+
+class check:
+    def __init__(self, *args):
+        self._res = lookup(*args)
+    def __eq__(self, other):
+        if not self._res == other:
+            raise NotInterested()
 
 class Action(metaclass=ABCMeta):
     """Base class for an action."""
@@ -80,42 +91,33 @@ class NodeTransformation(Transformation):
     """Transformations which acts on certain dictionaries."""
 
     @abstractmethod
-    def is_target_dict(self, obj):
-        """Returns `True` in case this transformation shall apply on this
-        node."""
-        raise NotImplementedError
-
-    @abstractmethod
     def transform_dict(self, obj):
         """Computes new dictionary which shall be used in tree instead of the
         node `obj`."""
         raise NotImplementedError
 
     def act_on_dict(self, obj):
-        if self.is_target_dict(obj):
+        try:
             return self.transform_dict(obj)
-        else:
+        except NotInterested:
             return super().act_on_dict(obj)
 
 class NodeTypeTransformation(NodeTransformation):
     """Transformation based on the attribute `"type"` of the node
     dictionary."""
 
-    def is_target_dict(self, obj):
-        return "type" in obj
-
     def transform_dict(self, obj):
-        method = getattr(self, "transform_" + obj["type"], None)
-
-        if method:
-            return method(obj)
-        else:
+        if not "type" in obj:
+            raise NotInterested()
+        try:
+            return getattr(self, "transform_" + obj["type"])(obj)
+        except AttributeError:
             return self.default_transformation(obj)
 
     def default_transformation(self, obj):
         """Default transformation for the case no suitable transformation was
         found."""
-        return super().act_on_dict(obj)
+        raise NotInterested()
 
 class DeleteTransformation(Transformation):
 

@@ -4,7 +4,8 @@ import json
 
 from html.parser import HTMLParser
 from transformations import NodeTransformation, ChainedAction, Action, \
-                            NodeTypeTransformation, DeleteTransformation
+                            NodeTypeTransformation, DeleteTransformation, \
+                            check
 from utils import lookup, remove_prefix, add_dict
 
 TEMPLATE_SPEC = {
@@ -75,10 +76,6 @@ class MediaWikiCodeParser(ChainedAction):
         """Replaces included MediaWiki templates with template
         specification."""
 
-        def is_target_dict(self, obj):
-            return lookup(obj, "type") == "element" \
-                    and lookup(obj, "attrs", "typeof") == "mw:Transclusion"
-
         def parse_parameter_value(self, name, param_key, param_value):
             """Parses `param_value` in case `param_key` is a content
             parameter."""
@@ -90,6 +87,9 @@ class MediaWikiCodeParser(ChainedAction):
                 return param_value
 
         def transform_dict(self, obj):
+            check(obj, "type") == "element"
+            check(obj, "attrs", "typeof") == "mw:Transclusion"
+
             template = json.loads(obj["attrs"]["data-mw"])
             template = template["parts"][0]["template"]
 
@@ -116,10 +116,9 @@ class ArticleParser(ChainedAction):
             return add_dict(article, {"content": content})
 
     class ConvertInlineMath(NodeTransformation):
-        def is_target_dict(self, obj):
-            return lookup(obj, "attrs", "typeof") == "mw:Extension/math"
-
         def transform_dict(self, obj):
+            check(obj, "attrs", "typeof") == "mw:Extension/math"
+
             formula = json.loads(obj["attrs"]["data-mw"])["body"]["extsrc"]
 
             return {"type": "inlinemath", "formula": formula}
