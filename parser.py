@@ -1,6 +1,10 @@
 """Module defining a parser for MediaWiki code."""
 
+import json
+
 from html.parser import HTMLParser
+from transformations import JSONTransformation
+from utils import lookup
 
 class HTML2JSONParser(HTMLParser):
     """Parser for converting HTML to JSON."""
@@ -49,10 +53,28 @@ def mediawikihtml2json(text):
 
     return parser.content
 
+class TemplateDeinclusion(JSONTransformation):
+    """Replaces included MediaWiki templates with template specification."""
+
+    def transform_dict(self, obj):
+        if lookup(obj, "type") == "element" \
+                and lookup(obj, "attrs", "typeof") == "mw:Transclusion":
+            template = json.loads(obj["attrs"]["data-mw"])
+            template = template["parts"][0]["template"]
+
+            name = template["target"]["wt"].strip()
+
+            params = template["params"]
+            params = {key: value["wt"] for key, value in params.items()}
+
+            return {"type": "template", "name": name, "params": params}
+        else:
+            return super(TemplateDeinclusion, self).transform_dict(obj)
+
 def parse_article(api, article):
     """Parses the article `article`."""
     article["content"] = api.convert_text_to_html(article["title"],
                                                   article["content"])
     article["content"] = mediawikihtml2json(article["content"])
 
-    return article
+    return TemplateDeinclusion()(article)
