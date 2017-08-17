@@ -9,6 +9,8 @@ from utils import lookup, remove_prefix, add_dict
 
 TEMPLATE_SPEC = {
     "Definition": lambda x: x in ["definition"],
+    "Warnung": lambda x: x in ["1"],
+    "Aufgabe": lambda x: x in ["aufgabe", "lösung", "beweis"]
 }
 
 class HTML2JSONParser(HTMLParser):
