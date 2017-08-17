@@ -5,7 +5,7 @@ import requests
 
 from api import HTTPMediaWikiAPI
 from cachecontrol import CacheControl
-from parser import parse_article
+from parser import ArticleParser
 
 # title of article which shall be converted to PDF
 ARTICLE = "Mathe für Nicht-Freaks: Ableitung und Differenzierbarkeit"
@@ -14,10 +14,11 @@ def run_script():
     """Runs this script."""
     req = CacheControl(requests.Session())
     api = HTTPMediaWikiAPI(req)
+    parser = ArticleParser(api=api)
 
     article = {"type": "article", "title": ARTICLE}
 
-    article = parse_article(api, article)
+    article = parser(article)
 
     print(json.dumps(article, indent=2))
 

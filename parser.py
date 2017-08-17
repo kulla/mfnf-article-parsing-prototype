@@ -4,7 +4,7 @@ import json
 
 from html.parser import HTMLParser
 from transformations import NodeTransformation, ChainedAction, Action
-from utils import lookup, remove_prefix
+from utils import lookup, remove_prefix, add_dict
 
 TEMPLATE_SPEC = {
     "Definition": lambda x: x in ["definition"],
@@ -100,9 +100,17 @@ class MediaWikiCodeParser(ChainedAction):
 
             return {"type": "template", "name": name, "params": params}
 
-def parse_article(api, article):
-    """Parses the article `article`."""
-    article["content"] = api.get_content(article["title"])
-    article["content"] = MediaWikiCodeParser(api=api,title=article["title"])(article["content"])
+class ArticleParser(ChainedAction):
 
-    return article
+    class LoadArticleContent(NodeTransformation):
+        """Loads the content of an article."""
+
+        def is_target_dict(self, obj):
+            return lookup(obj, "type") == "article"
+
+        def transform_dict(self, article):
+            parser = MediaWikiCodeParser(api=self.api, title=article["title"])
+
+            content = parser(self.api.get_content(article["title"]))
+
+            return add_dict(article, {"content": content})
