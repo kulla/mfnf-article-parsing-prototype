@@ -95,7 +95,7 @@ class NodeTransformation(Transformation):
         if self.is_target_dict(obj):
             return self.transform_dict(obj)
         else:
-            super().act_on_dict(obj)
+            return super().act_on_dict(obj)
 
 class NodeTypeTransformation(NodeTransformation):
     """Transformation based on the attribute `"type"` of the node
@@ -110,7 +110,7 @@ class NodeTypeTransformation(NodeTransformation):
         if method:
             return method(obj)
         else:
-            self.default_transformation(obj)
+            return self.default_transformation(obj)
 
     def default_transformation(self, obj):
         """Default transformation for the case no suitable transformation was
