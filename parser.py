@@ -115,6 +115,17 @@ class ArticleParser(ChainedAction):
 
             return add_dict(article, {"content": content})
 
+    class HandleLists(NodeTransformation):
+        def transform_dict(self, obj):
+            check(obj, "type") == "element"
+            check(obj, "name").of("ul", "ol")
+
+            children = [self(li["children"]) for li in obj["children"]]
+
+            return {"type": "list",
+                    "ordered": obj["name"] == "ol",
+                    "children": children}
+
     class ConvertInlineMath(NodeTransformation):
         def transform_dict(self, obj):
             check(obj, "attrs", "typeof") == "mw:Extension/math"
