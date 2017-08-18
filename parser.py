@@ -146,6 +146,18 @@ class ArticleParser(ChainedAction):
                     "name": img["resource"], "url": img["src"],
                     "thumbnail": obj["attrs"]["typeof"] == "mw:Image/Thumb"}
 
+    class HandleTable(NodeTransformation):
+        def transform_dict(self, obj):
+            check(obj, "type") == "element"
+            check(obj, "name") == "table"
+
+            content = obj["children"]
+
+            if lookup(content, 0, "name") == "tbody":
+                content = content[0]["children"]
+
+            return {"type": "table", "children": self(content)}
+
     class ConvertInlineMath(NodeTransformation):
         def transform_dict(self, obj):
             check(obj, "attrs", "typeof") == "mw:Extension/math"
