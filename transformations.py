@@ -16,6 +16,9 @@ class check:
     def __eq__(self, other):
         if not self._res == other:
             raise NotInterested()
+    def of(self, *others):
+        if not self._res in others:
+            raise NotInterested()
 
 class Action(metaclass=ABCMeta):
     """Base class for an action."""
