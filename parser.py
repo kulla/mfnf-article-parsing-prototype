@@ -126,6 +126,26 @@ class ArticleParser(ChainedAction):
                     "ordered": obj["name"] == "ol",
                     "children": children}
 
+    class HandleFigures(NodeTransformation):
+        def transform_dict(self, obj):
+            check(obj, "type") == "element"
+            check(obj, "name") == "figure"
+            check(obj, "attrs", "typeof").of("mw:Image", "mw:Image/Thumb")
+
+            caption = [child
+                       for child in obj["children"]
+                       if child["name"] == "figcaption"]
+            try:
+                caption = caption[0]["children"]
+            except IndexError:
+                caption = []
+
+            img = obj["children"][0]["children"][0]["attrs"]
+
+            return {"type": "image", "caption": self(caption),
+                    "name": img["resource"], "url": img["src"],
+                    "thumbnail": obj["attrs"]["typeof"] == "mw:Image/Thumb"}
+
     class ConvertInlineMath(NodeTransformation):
         def transform_dict(self, obj):
             check(obj, "attrs", "typeof") == "mw:Extension/math"
