@@ -88,7 +88,7 @@ class Transformation(Action):
         elif isinstance(obj, Mapping):
             return self.act_on_dict(obj)
         else:
-            raise NotImplementedError
+            return obj
 
 class NodeTransformation(Transformation):
     """Transformations which acts on certain dictionaries."""
