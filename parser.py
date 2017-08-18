@@ -171,3 +171,18 @@ class ArticleParser(ChainedAction):
         def shall_delete_dict(self, obj):
             return lookup(obj, "type") == "template" \
                     and obj["name"].startswith("#invoke:")
+
+    class FixNodeTypes(NodeTypeTransformation):
+
+        def transform_element(self, obj):
+            if obj["name"] == "p":
+                return {"type": "paragraph", "children": self(obj["children"])}
+            elif obj["name"] in ("i", "b", "th", "tr", "td", "dfn"):
+                return {"type": obj["name"], "children": self(obj["children"])}
+            elif obj["name"] in ("h1", "h2", "h3", "h4"):
+                return {"type": "header",
+                        "depth": int(obj["name"][-1]),
+                        "children": self(obj["children"])}
+            else:
+                return {"type": "notimplemnted",
+                        "target": obj}
